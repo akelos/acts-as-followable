@@ -1,0 +1,62 @@
+Acts as Followable Plugin
+===================================
+This plugin allows you to follow and unfollow Models.
+It will keep your followers list, your following list and your friends list (people you follow and that follow you).
+
+define the act in your model:
+
+class User extends ActiveRecord
+{
+
+    var $acts_as = array('followable');
+    
+}
+
+and start following:
+
+$paul->follow($frank);
+
+Paul is now following frank:
+
+echo $paul->isFollowing($frank);
+// true
+
+Frank is followed by Paul:
+echo $frank->isFollowedBy($paul);
+// true
+...
+
+$frank will now be in your following list:
+
+echo $paul->followings[0]->name;
+// frank
+
+if $frank follows $paul, they become friends:
+
+$frank->follow($paul);
+
+echo $frank->isFriendOf($paul);
+// true
+
+echo $frank->friends[0]->name;
+// paul
+
+Installation
+--------------------------------
+
+    ./script/plugin install acts_as_followable
+
+The Installer will add some new methods to the app/shared_model.php.
+Please do not modify them, they are marked with
+
+/** AUTOMATED START: &... */
+
+/** AUTOMATED END: &... */
+
+See test/unit/lib/ActsAsFollowable.php for usage info.
+
+Future
+--------
+
+See TODO file to know what will be implemented into future versions of this plugin.
+
