@@ -20,7 +20,7 @@ class Follower extends ActiveRecord
                 $identifier = $this->_getIdentifier();
             }
             if (class_exists($name)) {
-                    $this->belongsTo = array(strtolower($name) => array('class_name'=>$name,'primary_key_name'=>$identifier,'conditions'=>'following_class = ?','bind'=>array($this->belongsToClass)));
+                    $this->belongsTo = array(strtolower($name) => array('class_name'=>$name,'primary_key_name'=>$identifier,'conditions'=>'following_class = ? AND follower_class = ?','bind'=>array($this->belongsToClass, $this->belongsToClass)));
             } else {
                 trigger_error(Ak::t('Cannot instantiate model %modelName',array('modelName'=>$name)));
             }
