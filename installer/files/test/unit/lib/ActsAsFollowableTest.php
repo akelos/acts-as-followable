@@ -136,7 +136,7 @@ class ActsAsFollowableTest extends AkUnitTest
     }
     function test_find_with_followers_friends_following()
     {
-        $new = $this->Person->create(array('name'=>'NewGuy'));
+        $new = $this->Person->create(array('name'=>'NewGuy1'));
         
         $arno = &$this->Person->find(2);
         $jose = &$this->Person->find(3);
@@ -146,11 +146,89 @@ class ActsAsFollowableTest extends AkUnitTest
         $new->follow($arno);
         $jose->follow($new);
         
-        $theNewGuy = $this->Person->findFirstBy('name','NewGuy',array('include'=>'followers,followings,friends'));
+        $theNewGuy = $this->Person->findFirstBy('name','NewGuy1',array('include'=>'followers,followings,friends'));
 
         $this->assertEqual(1,$theNewGuy->friend->count());
         $this->assertEqual(2,$theNewGuy->follower->count());
         $this->assertEqual(1,$theNewGuy->following->count());
+    }
+    
+    function test_find_followers_by_join_class()
+    {
+        $new = $this->Person->create(array('name'=>'NewGuy2'));
+        
+        $arno = &$this->Person->find(2);
+        $jose = &$this->Person->find(3);
+        
+        // new guy and arno are friends
+        $arno->follow($new);
+        $new->follow($arno);
+        $jose->follow($new);
+        $jose->follow($arno);
+        $follower = new Follower('Person');
+        $peopleFollowingArno = $follower->findBy('following_id',$arno->getId(),array('include'=>array('person'=>array('order'=>'id ASC'))));
+        
+        $this->assertEqual('Jose',$peopleFollowingArno[0]->person->name);
+        $this->assertEqual('NewGuy1',$peopleFollowingArno[1]->person->name);
+        $this->assertEqual('NewGuy2',$peopleFollowingArno[2]->person->name);
+
+    }
+    
+    function test_find_following_by_join_class()
+    {
+        
+        $arno = &$this->Person->find(2);
+        
+        $following = new Following('Person');
+        $peopleArnoIsFollowing = $following->findBy('follower_id',$arno->getId(),array('include'=>array('person'=>array('order'=>'id ASC'))));
+
+        $this->assertEqual(2,count($peopleArnoIsFollowing));
+        $this->assertEqual('NewGuy1',$peopleArnoIsFollowing[0]->person->name);
+        $this->assertEqual('NewGuy2',$peopleArnoIsFollowing[1]->person->name);
+        
+        $person = &$peopleArnoIsFollowing[1]->person;
+        $arno->unfollow($person);
+        $peopleArnoIsFollowing = $following->findBy('follower_id',$arno->getId(),array('include'=>array('person'=>array('order'=>'id ASC'))));
+
+        $this->assertEqual('NewGuy1',$peopleArnoIsFollowing[0]->person->name);
+        $this->assertEqual(1,count($peopleArnoIsFollowing));
+        
+        $arno->follow($person);
+        $peopleArnoIsFollowing = $following->findBy('follower_id',$arno->getId(),array('include'=>array('person'=>array('order'=>'id ASC'))));
+
+        $this->assertEqual(2,count($peopleArnoIsFollowing));
+        $this->assertEqual('NewGuy1',$peopleArnoIsFollowing[0]->person->name);
+        $this->assertEqual('NewGuy2',$peopleArnoIsFollowing[1]->person->name);
+    }
+    
+    function test_find_friends_by_join_class()
+    {
+        
+        $arno = &$this->Person->find(2);
+        
+        $friends = new FollowableFriend('Person');
+        $peopleArnoIsFriendsWith = $friends->findBy('follower_id',$arno->getId(),array('include'=>array('person'=>array('order'=>'id ASC'))));
+
+        $this->assertEqual(2,count($peopleArnoIsFriendsWith));
+        $this->assertEqual('NewGuy1',$peopleArnoIsFriendsWith[0]->person->name);
+        $this->assertEqual('NewGuy2',$peopleArnoIsFriendsWith[1]->person->name);
+        
+        $person = &$peopleArnoIsFriendsWith[1]->person;
+        
+        $arno->unfollow($person);
+        
+        $peopleArnoIsFriendsWith = $friends->findBy('follower_id',$arno->getId(),array('include'=>array('person'=>array('order'=>'id ASC'))));
+        
+        $this->assertEqual(1,count($peopleArnoIsFriendsWith));
+        $this->assertEqual('NewGuy1',$peopleArnoIsFriendsWith[0]->person->name);
+        
+        $arno->follow($person);
+        $peopleArnoIsFriendsWith = $friends->findBy('follower_id',$arno->getId(),array('include'=>array('person'=>array('order'=>'id ASC'))));
+
+        $this->assertEqual(2,count($peopleArnoIsFriendsWith));
+        $this->assertEqual('NewGuy1',$peopleArnoIsFriendsWith[0]->person->name);
+        $this->assertEqual('NewGuy2',$peopleArnoIsFriendsWith[1]->person->name);
+
     }
 }
 ?>
